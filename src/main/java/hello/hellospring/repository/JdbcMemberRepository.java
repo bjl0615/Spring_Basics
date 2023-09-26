@@ -2,6 +2,7 @@ package hello.hellospring.repository;
 
 import hello.hellospring.domain.Member;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -9,11 +10,32 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public class JdbcMemberRepository implements MemberRepository {
 
     private final DataSource dataSource;
     public JdbcMemberRepository(DataSource dataSource) {
         this.dataSource = dataSource;
+
+        String sql = "insert into member(name) values(?)";
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getConnection();
+            pstmt = conn.prepareStatement(sql,
+                    Statement.RETURN_GENERATED_KEYS);
+            pstmt.setString(1, "spring3");
+            pstmt.executeUpdate();
+            rs = pstmt.getGeneratedKeys();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        } finally {
+            close(conn, pstmt, rs);
+        }
+
     }
     @Override
     public Member save(Member member) {
@@ -104,7 +126,7 @@ public class JdbcMemberRepository implements MemberRepository {
             if(rs.next()) {
                 Member member = new Member();
                 member.setId(rs.getLong("id"));
-                member.setName(rs.getString("name"));
+                System.out.println(rs.getLong("id"));
                 return Optional.of(member);
             }
             return Optional.empty();
